@@ -1,0 +1,39 @@
+- name: Install KVM & tools
+  apt:
+    name:
+      - qemu-kvm
+      - libvirt-daemon-system
+      - libvirt-clients
+      - bridge-utils
+      - nfs-common
+    state: present
+    update_cache: yes
+
+- name: Ensure libvirtd service
+  service:
+    name: libvirtd
+    state: started
+    enabled: yes
+
+
+- name: Bring up bridge
+  command: ip link set {{ libvirt_bridge_name }} up
+
+- name: Install CloudStack agent
+  apt:
+    name: cloudstack-agent
+    state: present
+
+- name: Ensure cloudstack-agent running
+  service:
+    name: cloudstack-agent
+    state: started
+    enabled: yes
+
+- name: Mount Primary NFS (for KVM + NFS primary setups)
+  mount:
+    path: "{{ primary_mount_on_kvm }}"
+    src: "nfs:{{ nfs_primary_export }}"
+    fstype: nfs
+    opts: "rw"
+    state: mounted

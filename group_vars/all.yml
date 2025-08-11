@@ -1,0 +1,24 @@
+# 공통
+cs_db_root_password: "qhdksAdmin!23"
+cs_db_user: "cloud"
+cs_db_pass: "cloudpass"
+
+# NFS
+nfs_primary_export: "/export/primary"
+nfs_secondary_export: "/export/secondary"
+nfs_allowed_cidr: "*(rw,async,no_root_squash)"
+
+# SystemVM 템플릿 (예: KVM용, bz2 압축 URL)
+# 실제 사용 중인 CloudStack 버전에 맞는 URL로 바꾸세요.
+cs_sysvm_url: "http://download.cloudstack.org/systemvm/systemvmtemplate-4.19.3-kvm.qcow2.bz2"
+
+# Management 설정
+cs_mgmt_listen_port: 8080     # API/UI
+cs_mgmt_agent_port: 8250      # 에이전트 연결 포트
+
+# NFS가 노드에 마운트되는 경로
+primary_mount_on_kvm: "/mnt/primary"
+secondary_mount_on_mgmt: "/mnt/secondary"
+
+# 네트워킹(필요 시 수정)
+libvirt_bridge_name: "cloudbr0"

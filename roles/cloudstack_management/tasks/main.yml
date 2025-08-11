@@ -1,0 +1,78 @@
+- name: Install base packages
+  apt:
+    name:
+      - mariadb-server
+      - openjdk-11-jre-headless
+      - nfs-common
+    state: present
+    update_cache: yes
+
+# (선택) MariaDB 기본 튜닝 필요 시 templates/my.cnf.j2 사용
+# - name: Tune MariaDB
+#   template:
+#     src: my.cnf.j2
+#     dest: /etc/mysql/mariadb.conf.d/99-cloudstack.cnf
+#   notify: Restart MariaDB
+
+- name: Install CloudStack management packages
+  apt:
+    name: cloudstack-management
+    state: present
+
+- name: Ensure MariaDB started
+  service:
+    name: mariadb
+    state: started
+    enabled: yes
+
+- name: Setup CloudStack databases
+  command: >
+    cloudstack-setup-databases {{ cs_db_user }}:{{ cs_db_pass }}@localhost
+    --deploy-as=root:{{ cs_db_root_password }}
+  args:
+    creates: /var/lib/cloudstack/management/.db_setup_done
+
+- name: Mark DB setup done
+  file:
+    path: /var/lib/cloudstack/management/.db_setup_done
+    state: touch
+
+- name: Setup CloudStack management
+  command: cloudstack-setup-management
+  args:
+    creates: /var/lib/cloudstack/management/.mgmt_setup_done
+
+- name: Mark mgmt setup done
+  file:
+    path: /var/lib/cloudstack/management/.mgmt_setup_done
+    state: touch
+
+- name: Mount secondary NFS on mgmt
+  mount:
+    path: "{{ secondary_mount_on_mgmt }}"
+    src: "nfs:{{ nfs_secondary_export }}"
+    fstype: nfs
+    opts: "rw"
+    state: mounted
+
+- name: Install System VM template into Secondary
+  command: >
+    /usr/share/cloudstack-common/scripts/storage/secondary/cloud-install-sys-tmplt
+    -m {{ secondary_mount_on_mgmt }}
+    -u {{ cs_sysvm_url }}
+    -h kvm -F
+  args:
+    creates: "{{ secondary_mount_on_mgmt }}/template/tmpl"
+
+- name: Open firewall (optional, ufw 사용 시)
+  command: ufw allow {{ item }}
+  loop:
+    - "{{ cs_mgmt_listen_port }}/tcp"
+    - "{{ cs_mgmt_agent_port }}/tcp"
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Ensure cloudstack-management running
+  service:
+    name: cloudstack-management
+    state: started
+    enabled: yes

@@ -1,0 +1,14 @@
+- hosts: storage
+  become: yes
+  roles:
+    - nfs_server
+
+- hosts: management
+  become: yes
+  roles:
+    - cloudstack_management
+
+- hosts: hypervisors
+  become: yes
+  roles:
+    - cloudstack_kvm_agent

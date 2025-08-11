@@ -1,0 +1,24 @@
+- name: Install NFS Server
+  apt:
+    name: nfs-kernel-server
+    state: present
+    update_cache: yes
+
+- name: Create export dirs
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0777"
+  loop:
+    - "{{ nfs_primary_export }}"
+    - "{{ nfs_secondary_export }}"
+
+- name: Configure /etc/exports
+  copy:
+    dest: /etc/exports
+    content: |
+      {{ nfs_primary_export }}  {{ nfs_allowed_cidr }}
+      {{ nfs_secondary_export }} {{ nfs_allowed_cidr }}
+  notify: Restart NFS
